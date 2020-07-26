@@ -21,8 +21,28 @@ namespace AsyncAwaitExercises.Core
             // HINTS:
             // * `HttpClient.GetAsync` does not accept cancellation token (use `GetAsync` instead)
             // * you may use `EnsureSuccessStatusCode()` method
+            if (maxTries < 2) throw new ArgumentException("maxTries must be at least 2");
 
-            return string.Empty;
+            int retriesCounter = 0;
+            int delayInSeconds = 1;
+
+            while (true)
+            {
+                token.ThrowIfCancellationRequested();
+                try
+                {
+                    var response = await client.GetAsync(new Uri(url), token).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    retriesCounter++;
+                    if (retriesCounter > maxTries || token.IsCancellationRequested) throw;
+                    await Task.Delay(TimeSpan.FromSeconds(delayInSeconds), token).ConfigureAwait(false);
+                    delayInSeconds *= 2;
+                }
+            }
         }
 
     }

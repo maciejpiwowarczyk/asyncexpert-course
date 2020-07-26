@@ -54,7 +54,7 @@ namespace AsyncAwaitExercises.Tests
                 token: cts.Token));
 
             Assert.NotNull(exception);
-            Assert.IsType<TaskCanceledException>(exception);
+            Assert.IsAssignableFrom<OperationCanceledException>(exception);
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace AsyncAwaitExercises.Tests
                     token: cts.Token));
 
             Assert.NotNull(exception);
-            Assert.IsType<TaskCanceledException>(exception);
+            Assert.IsAssignableFrom<OperationCanceledException>(exception);
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -190,7 +190,7 @@ namespace AsyncAwaitExercises.Tests
                     token: cts.Token));
 
             Assert.NotNull(exception);
-            Assert.IsType<TaskCanceledException>(exception);
+            Assert.IsAssignableFrom<OperationCanceledException>(exception);
             mockHttp.VerifyNoOutstandingExpectation();
         }
     }
