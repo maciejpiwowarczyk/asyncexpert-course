@@ -5,48 +5,46 @@ namespace LowLevelExercises.Core
     /// <summary>
     /// A simple class for reporting a specific value and obtaining an average.
     /// </summary>
-    /// TODO: remove the locking and use <see cref="Interlocked"/> and <see cref="Volatile"/> to implement a lock-free implementation.
     public class AverageMetric
     {
-        // TODO: this should not be needed, once you remove all the locks below
-        readonly object sync = new object();
+        class Metric
+        {
+            public readonly int Sum;
+            public readonly int Count;
 
-        int sum = 0;
-        int count = 0;
+            public Metric(int sum, int count)
+            {
+                Sum = sum;
+                Count = count;
+            }
+        }
+
+        private Metric current;
+
+        public AverageMetric()
+        {
+            current = new Metric(0, 0);
+        }
 
         public void Report(int value)
         {
-            // TODO: how to increment sum + count without locking?
-            lock (sync)
+            Metric readCurrent;
+            do
             {
-                sum += value;
-                count += 1;
-            }
+                readCurrent = Volatile.Read(ref current);
+            } while (readCurrent != Interlocked.CompareExchange(ref current, new Metric(readCurrent.Sum + value, readCurrent.Count + 1), readCurrent));
         }
 
-        public double Average
-        {
-            get
-            {
-                // TODO: how to access the values in a lock-free way?
-                // let's assume that we can return value estimated on a bit stale data(in time average will be less and less diverged)
-                lock (sync)
-                {
-                    return Calculate(count, sum);
-                }
-            }
-        }
+        public double Average => Calculate(Volatile.Read(ref current));
 
-        static double Calculate(in int count, in int sum)
+        static double Calculate(Metric metric)
         {
-            // DO NOT change the way calculation is done.
-
-            if (count == 0)
+            if (metric.Count == 0)
             {
                 return double.NaN;
             }
 
-            return (double)sum / count;
+            return (double)metric.Sum / metric.Count;
         }
     }
 }
